@@ -39,11 +39,17 @@ c_sylvanTrue       =  c_sylvanFalse .|. c_sylvanComplement
 sylvanFalse = BDD c_sylvanFalse
 sylvanTrue  = BDD c_sylvanTrue
 
-foreign import ccall safe "sylvan_init"
-    c_sylvanInit :: CSize -> CSize -> CInt -> IO ()
+foreign import ccall safe "sylvan_init_mtbdd"
+    c_sylvanInit :: IO ()
 
-sylvanInit :: PrimMonad m => Int -> Int -> Int -> m ()
-sylvanInit dataSize cacheSize granuality = unsafePrimToPrim $ c_sylvanInit (fromIntegral dataSize) (fromIntegral cacheSize) (fromIntegral granuality)
+sylvanInit :: PrimMonad m => m ()
+sylvanInit = unsafePrimToPrim c_sylvanInit 
+
+foreign import ccall safe "sylvan_init_package"
+    c_sylvanInitPackage :: CInt -> CInt -> CInt -> CInt -> IO ()
+
+sylvanInitPackage :: PrimMonad m => Int -> Int -> Int -> Int -> m ()
+sylvanInitPackage tableSize maxSize cacheSize maxCacheSize = unsafePrimToPrim $ c_sylvanInitPackage (fromIntegral tableSize) (fromIntegral maxSize) (fromIntegral cacheSize) (fromIntegral maxCacheSize)
 
 foreign import ccall safe "sylvan_quit"
     c_sylvanQuit :: IO ()
@@ -60,19 +66,19 @@ ithVar var = liftM BDD $ unsafePrimToPrim $ c_ithVar (fromIntegral var)
 nithVar :: PrimMonad m => BDDVar -> m BDD
 nithVar var = liftM (BDD . xor c_sylvanComplement) $ unsafePrimToPrim $ c_ithVar (fromIntegral var)
 
-foreign import ccall safe "sylvan_ref"
+foreign import ccall safe "mtbdd_ref"
     c_ref :: CBDD -> IO (CBDD)
 
 ref :: PrimMonad m => BDD -> m BDD
 ref (BDD bdd) = liftM BDD $ unsafePrimToPrim $ c_ref bdd
 
-foreign import ccall safe "sylvan_deref"
+foreign import ccall safe "mtbdd_deref"
     c_deref :: CBDD -> IO ()
 
 deref :: PrimMonad m => BDD -> m ()
 deref (BDD bdd) = unsafePrimToPrim $ c_deref bdd
 
-foreign import ccall safe "sylvan_gc"
+foreign import ccall safe "sylvan_gc_stub"
     c_gc :: IO ()
 
 gc :: PrimMonad m => m ()
@@ -99,6 +105,7 @@ foreign import ccall safe "sylvan_ite_stub"
 ite :: PrimMonad m => BDD -> BDD -> BDD -> m BDD
 ite (BDD a) (BDD b) (BDD c) = liftM BDD $ unsafePrimToPrim $ c_ite a b c
 
+--TODO: need stub
 bxor :: PrimMonad m => BDD -> BDD -> m BDD
 bxor a b = ite a (neg b) b
 
@@ -108,6 +115,7 @@ bequiv a b = ite a b (neg b)
 bor :: PrimMonad m => BDD -> BDD -> m BDD
 bor a b = ite a sylvanTrue b
 
+--TODO: need stub
 band :: PrimMonad m => BDD -> BDD -> m BDD
 band a b = ite a b sylvanFalse
 
@@ -149,7 +157,7 @@ relProd :: PrimMonad m => BDD -> BDD -> BDD -> m BDD
 relProd (BDD a) (BDD b) (BDD vars) = liftM BDD $ unsafePrimToPrim $ c_relProd a b vars
 -}
 
-foreign import ccall safe "sylvan_set_fromarray"
+foreign import ccall safe "mtbdd_fromarray"
     c_setFromArray :: Ptr CBDDVar -> CSize -> IO CBDD
 
 setFromArray :: PrimMonad m => [BDDVar] -> m BDD
@@ -160,7 +168,7 @@ setFromArray vars = liftM BDD $ unsafePrimToPrim $
 mapEmpty :: BDDMap
 mapEmpty = BDDMap c_sylvanFalse
 
-foreign import ccall safe "sylvan_map_add"
+foreign import ccall safe "mtbdd_map_add"
     c_mapAdd :: CBDDMap -> CBDDVar -> CBDD -> IO CBDDMap
 
 mapAdd :: PrimMonad m => BDDMap -> BDDVar -> BDD -> m BDDMap
@@ -172,47 +180,49 @@ foreign import ccall safe "sylvan_compose_stub"
 compose :: PrimMonad m => BDD -> BDDMap -> m BDD
 compose (BDD f) (BDDMap m) = liftM BDD $ unsafePrimToPrim $ c_compose f m
 
-foreign import ccall safe "sylvan_report_stats"
-    c_reportStats :: IO ()
-
-reportStats :: PrimMonad m => m ()
-reportStats = unsafePrimToPrim c_reportStats
-
-foreign import ccall safe "sylvan_printdot"
-    c_printDot :: CBDD -> IO ()
-
-printDot :: PrimMonad m => BDD -> m ()
-printDot (BDD x) = unsafePrimToPrim $ c_printDot x
-
-foreign import ccall safe "sylvan_print"
-    c_bddPrint :: CBDD -> IO ()
-
-bddPrint :: PrimMonad m => BDD -> m ()
-bddPrint (BDD x) = unsafePrimToPrim $ c_bddPrint x
-
-foreign import ccall safe "sylvan_printsha"
-    c_printSHA :: CBDD -> IO ()
-
-printSHA :: BDD -> IO ()
-printSHA (BDD x) = unsafePrimToPrim $ c_printSHA x
+----TODO: doesnt seem to exist
+--foreign import ccall safe "sylvan_report_stats"
+--    c_reportStats :: IO ()
+--
+--reportStats :: PrimMonad m => m ()
+--reportStats = unsafePrimToPrim c_reportStats
+--
+--foreign import ccall safe "sylvan_printdot"
+--    c_printDot :: CBDD -> IO ()
+--
+--printDot :: PrimMonad m => BDD -> m ()
+--printDot (BDD x) = unsafePrimToPrim $ c_printDot x
+--
+----TODO: a macro
+--foreign import ccall safe "sylvan_print"
+--    c_bddPrint :: CBDD -> IO ()
+--
+--bddPrint :: PrimMonad m => BDD -> m ()
+--bddPrint (BDD x) = unsafePrimToPrim $ c_bddPrint x
+--
+----TODO: a macro
+--foreign import ccall safe "sylvan_printsha"
+--    c_printSHA :: CBDD -> IO ()
+--
+--printSHA :: BDD -> IO ()
+--printSHA (BDD x) = unsafePrimToPrim $ c_printSHA x
 
 foreign import ccall safe "sylvan_cube"
-    c_cube :: Ptr CBDDVar -> CSize -> Ptr CChar -> IO CBDD
+    c_cube :: CBDD -> Ptr CUChar -> IO CBDD
 
 data Polarity = 
       Negative
     | Positive
     | DontCare
+    deriving (Show)
 
 polarityToInt :: Integral i => Polarity -> i
 polarityToInt Negative = 0
 polarityToInt Positive = 1
 polarityToInt DontCare = 2
 
-cube :: PrimMonad m => [BDDVar] -> [Polarity] -> m BDD
-cube vars polarities = liftM BDD $ unsafePrimToPrim $ 
-    withArrayLen (map fromIntegral vars)        $ \lv pv ->
-    withArrayLen (map polarityToInt polarities) $ \lp pp -> do
-        when (lv /= lp) $ error "cube: lists not equal length"
-        c_cube pv (fromIntegral lv) pp
+cube :: PrimMonad m => BDD -> [Polarity] -> m BDD
+cube (BDD vars) polarities = liftM BDD $ unsafePrimToPrim $ 
+    withArrayLen (map polarityToInt polarities) $ \_ pp -> 
+        c_cube vars pp
 
