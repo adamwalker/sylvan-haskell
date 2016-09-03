@@ -72,11 +72,17 @@ foreign import ccall safe "mtbdd_ref"
 ref :: PrimMonad m => BDD -> m BDD
 ref (BDD bdd) = liftM BDD $ unsafePrimToPrim $ c_ref bdd
 
+refMap :: PrimMonad m => BDDMap -> m BDDMap
+refMap (BDDMap bdd) = liftM BDDMap $ unsafePrimToPrim $ c_ref bdd
+
 foreign import ccall safe "mtbdd_deref"
     c_deref :: CBDD -> IO ()
 
 deref :: PrimMonad m => BDD -> m ()
 deref (BDD bdd) = unsafePrimToPrim $ c_deref bdd
+
+derefMap :: PrimMonad m => BDDMap -> m ()
+derefMap (BDDMap bdd) = unsafePrimToPrim $ c_deref bdd
 
 foreign import ccall safe "sylvan_gc_stub"
     c_gc :: IO ()
