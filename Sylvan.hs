@@ -111,19 +111,23 @@ foreign import ccall safe "sylvan_ite_stub"
 ite :: PrimMonad m => BDD -> BDD -> BDD -> m BDD
 ite (BDD a) (BDD b) (BDD c) = liftM BDD $ unsafePrimToPrim $ c_ite a b c
 
---TODO: need stub
+foreign import ccall safe "sylvan_xor_stub"
+    c_xor :: CBDD -> CBDD -> IO CBDD
+
 bxor :: PrimMonad m => BDD -> BDD -> m BDD
-bxor a b = ite a (neg b) b
+bxor (BDD a) (BDD b) = liftM BDD $ unsafePrimToPrim $ c_xor a b
 
 bequiv :: PrimMonad m => BDD -> BDD -> m BDD
-bequiv a b = ite a b (neg b)
+bequiv a b = liftM neg $ bxor a b
+
+foreign import ccall safe "sylvan_and_stub"
+    c_and :: CBDD -> CBDD -> IO CBDD
+
+band :: PrimMonad m => BDD -> BDD -> m BDD
+band (BDD a) (BDD b) = liftM BDD $ unsafePrimToPrim $ c_and a b
 
 bor :: PrimMonad m => BDD -> BDD -> m BDD
-bor a b = ite a sylvanTrue b
-
---TODO: need stub
-band :: PrimMonad m => BDD -> BDD -> m BDD
-band a b = ite a b sylvanFalse
+bor a b = liftM neg $ band (neg a) (neg b)
 
 bnand :: PrimMonad m => BDD -> BDD -> m BDD
 bnand a b = liftM neg $ band a b
