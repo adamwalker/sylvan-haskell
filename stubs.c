@@ -20,6 +20,11 @@ BDD sylvan_exists_stub(BDD a, BDD variables){
     return sylvan_exists(a, variables);
 }
 
+BDD sylvan_and_exists_stub(BDD a, BDD b, BDD variables){
+    LACE_ME;
+    return sylvan_and_exists(a, b, variables);
+}
+
 BDD sylvan_compose_stub(BDD f, BDDMAP m){
     LACE_ME;
     return sylvan_compose(f, m);

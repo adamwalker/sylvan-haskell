@@ -159,13 +159,11 @@ exists (BDD a) (BDD variables) = liftM BDD $ unsafePrimToPrim $ c_exists a varia
 forall :: PrimMonad m => BDD -> BDD -> m BDD
 forall a variables = liftM neg $ exists (neg a) variables
 
-{-
-foreign import ccall safe "sylvan_relprod_stub"
-    c_relProd :: CBDD -> CBDD -> CBDD -> IO CBDD
+foreign import ccall safe "sylvan_and_exists_stub"
+    c_and_exists :: CBDD -> CBDD -> CBDD -> IO CBDD
 
-relProd :: PrimMonad m => BDD -> BDD -> BDD -> m BDD
-relProd (BDD a) (BDD b) (BDD vars) = liftM BDD $ unsafePrimToPrim $ c_relProd a b vars
--}
+andExists :: PrimMonad m => BDD -> BDD -> BDD -> m BDD
+andExists (BDD a) (BDD b) (BDD vars) = liftM BDD $ unsafePrimToPrim $ c_and_exists a b vars
 
 foreign import ccall safe "mtbdd_fromarray"
     c_setFromArray :: Ptr CBDDVar -> CSize -> IO CBDD
